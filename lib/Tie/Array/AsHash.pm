@@ -1,42 +1,39 @@
-#
-# Tie::Array::AsHash
-#
-# $Id$
-#
-
 package Tie::Array::AsHash;
 
 use strict;
+use warnings;
 
 # use warnings;
-use vars qw($VERSION);
-use Carp;
+use Carp qw/croak/;
 
-use Tie::Hash;
+use Tie::Hash ();
 use Params::Util qw(_REGEX _STRING);
 
 use base qw(Tie::StdHash);
 
-$VERSION = '0.11';
+our $VERSION = '0.200';
+
+my $usage = 'usage: tie %hash, \'Tie::Array::AsHash\', array => \@array, '
+      . "split => ':' [, join => '#', 'Tie::File option' => value, ... ]\n";
 
 sub TIEHASH
 {
-    croak( usage() ) unless ( scalar(@_) % 2 );
+    croak( $usage ) unless ( scalar(@_) % 2 );
 
     my ( $obj, %opts ) = @_;
 
     # set array to use
-    my $array = delete( $opts{array} ) or croak( usage() );
+    my $array = delete( $opts{array} ) or croak( $usage );
 
     # set delimiter and croak if none was supplied
-    my $split = delete( $opts{split} ) or croak( usage() );
+    my $split = delete( $opts{split} ) or croak( $usage );
 
     # set join, an optional argument
     my $join = delete( $opts{join} );
 
     # if split's value is a regex and join isn't specified, croak
     croak( "Tie::Array::AsHash error: no 'join' option specified and 'split' option is a regular expression\n",
-           usage() )
+           $usage )
       if ( _REGEX($split) and not _STRING($join) );
 
     # the rest of the options can feed right into Tie::File
@@ -184,16 +181,9 @@ sub DESTROY
     UNTIE(@_);
 }
 
-sub usage
-{
-    return 'usage: tie %hash, \'Tie::Array::AsHash\', array => \@array, '
-      . "split => ':' [, join => '#', 'Tie::File option' => value, ... ]\n";
-}
-
 =head1 NAME
 
-Tie::Array::AsHash - Like Tie::File::AsHash (now: groundwork for it) but
-allows any array being source, not just files.
+Tie::Array::AsHash - tie arrays as hashes by splitting lines on separator
 
 =head1 SYNOPSIS
 
@@ -229,7 +219,7 @@ to hashes.
 The module was initially written by Chris Angell <chris@chrisangell.com> for
 managing htpasswd-format password files.
 
-=head1 USAGE
+=head1 SYNOPSIS
 
  use Tie::Array::AsHash;
  tie %hash, 'Tie::Array::AsHash', array => \@array, split => ':'
@@ -294,6 +284,8 @@ C<changepass.pl> changes password file entries when the lines are of
  #!/usr/bin/perl -w
 
  use strict;
+ use warnings;
+
  use Tie::Array::AsHash;
 
  die "Usage: $0 user password" unless @ARGV == 2;
@@ -306,14 +298,14 @@ C<changepass.pl> changes password file entries when the lines are of
  # username isn't in the password file? see if the admin wants it added
  unless (exists $users{$user})
  {
-	 print "User '$user' not found in db.  Add as a new user? (y/n)\n";
-	 chomp(my $y_or_n = <STDIN>);
-	 set_pw($user, $newpass) if $y_or_n =~ /^[yY]/;
+     print "User '$user' not found in db.  Add as a new user? (y/n)\n";
+     chomp(my $y_or_n = <STDIN>);
+     set_pw($user, $newpass) if $y_or_n =~ /^[yY]/;
  }
  else
  {
-	 set_pw($user, $newpass);
-	 print "Done.\n";
+     set_pw($user, $newpass);
+     print "Done.\n";
  }
 
  sub set_pw { $users{$_[0]} = crypt($_[1], "AA") }
@@ -352,7 +344,7 @@ similar to split/join parameters?
 
 =head1 AUTHOR
 
-Chris Angell <chris@chrisangell.com>, Jens Rehsack <rehsack@web.de>
+Chris Angell <chris@chrisangell.com>, Jens Rehsack <rehsack@cpan.org>
 
 Feel free to email me with suggestions, fixes, etc.
 
@@ -360,7 +352,7 @@ Thanks to Mark Jason Dominus for authoring the superb Tie::File module.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2004, Chris Angell, 2008, Jens Rehsack. All Rights Reserved.
+Copyright (C) 2004, Chris Angell, 2008-2013, Jens Rehsack. All Rights Reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, including any version of Perl 5.
